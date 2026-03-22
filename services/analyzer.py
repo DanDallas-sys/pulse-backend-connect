@@ -2,6 +2,14 @@ import os
 import asyncio
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
+import json
+import re
+
+def extract_json(text):
+    # Remove markdown formatting like ```json ... ```
+    text = re.sub(r"```json|```", "", text).strip()
+    
+    return json.loads(text)
 
 load_dotenv()
 
@@ -38,14 +46,14 @@ async def classify_tweet(tweet_text):
     content = response.choices[0].message.content
 
     try:
-        import json
-        parsed = json.loads(content)
+        
+        parsed = extract_json(content)
         return {
             "tweet": tweet_text,
             "risk": parsed.get("risk", "Unknown"),
             "reason": parsed.get("reason", "")
         }
-    except:
+    except Exception:
         return {
             "tweet": tweet_text,
             "risk": "Unknown",
