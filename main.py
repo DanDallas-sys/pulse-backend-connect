@@ -12,20 +12,27 @@ class ScanRequest(BaseModel):
 
 @app.post("/scan")
 async def scan_account(req: ScanRequest):
-    tweets = await fetch_tweets(req.handle)
+    try:
+        tweets = await fetch_tweets(req.handle)
+        results = await analyze_tweets_async(tweets)
 
-    results = await analyze_tweets_async(tweets)
+        summary = {
+            "high": sum(1 for r in results if r["risk"] == "High"),
+            "medium": sum(1 for r in results if r["risk"] == "Medium"),
+            "low": sum(1 for r in results if r["risk"] == "Low"),
+            "safe": sum(1 for r in results if r["risk"] == "Safe"),
+        }
 
-    summary = {
-        "high": sum(1 for r in results if r["risk"] == "High"),
-        "medium": sum(1 for r in results if r["risk"] == "Medium"),
-        "low": sum(1 for r in results if r["risk"] == "Low"),
-        "safe": sum(1 for r in results if r["risk"] == "Safe"),
-    }
+        return {
+            "handle": req.handle,
+            "total": len(tweets),
+            "summary": summary,
+            "results": results
+        }
 
-    return {
-        "handle": req.handle,
-        "total": len(tweets),
-        "summary": summary,
-        "results": results
-    }
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "trace": traceback.format_exc()
+        }
