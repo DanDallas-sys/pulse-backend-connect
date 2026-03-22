@@ -12,10 +12,10 @@ You are a reputation risk analyzer.
 
 Return ONLY valid JSON:
 
-{
+{{
   "risk": "High" | "Medium" | "Low" | "Safe",
   "reason": "short explanation"
-}
+}}
 
 Rules:
 - High = offensive, discriminatory, cancel-worthy
