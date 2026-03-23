@@ -42,13 +42,16 @@ async def scan_account(req: ScanRequest):
         else:
            risk_level = "Safe" 
 
+        dangerous = [r for r in results if r["risk"] in ["High", "Medium"]]
+        top_risks = dangerous[:3]
+
 
         return {
             "handle": req.handle,
-            "total": len(tweets),
-            "summary": summary,
             "crisis_score": crisis_score,
             "risk_level": risk_level,
+            "top_risks": top_risks,
+            "summary": summary,
             "results": results
         }
        
