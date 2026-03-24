@@ -32,8 +32,15 @@ oauth.register(
 #This is the code the login button will hit
 @app.get("/auth/twitter/login")
 async def twitter_login(request: Request):
-    redirect_uri =  "https://pulse-backend-connect.onrender.com/auth/twitter/callback"
-    return await oauth.twitter.authorize_redirect(request, redirect_uri)
+    try:
+        redirect_uri = request.url_for("twitter_callback")
+        return await oauth.twitter.authorize_redirect(request, redirect_uri)
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "trace": traceback.format_exc()
+        }
 
 #This is the code that sends the user back to the app after successful twitter login
 @app.get("/auth/twitter/callback")
