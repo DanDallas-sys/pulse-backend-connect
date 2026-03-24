@@ -23,47 +23,29 @@ oauth.register(
     name="twitter",
     client_id=os.getenv("TWITTER_CLIENT_ID"),
     client_secret=os.getenv("TWITTER_CLIENT_SECRET"),
-    request_token_url="https://api.twitter.com/oauth/request_token",
-    authorize_url="https://api.twitter.com/oauth/authorize",
-    access_token_url="https://api.twitter.com/oauth/access_token",
-    api_base_url="https://api.twitter.com/1.1/",
+    server_metadata_url="https://api.twitter.com/2/oauth2/token",
+    client_kwargs={
+        "scope": "tweet.read users.read offline.access"
+    }
 )
 
 #This is the code the login button will hit
 @app.get("/auth/twitter/login")
 async def twitter_login(request: Request):
-    try:
-        redirect_uri = request.url_for("twitter_callback")
-        return await oauth.twitter.authorize_redirect(request, redirect_uri)
-    except Exception as e:
-        import traceback
-        return {
-            "error": str(e),
-            "trace": traceback.format_exc()
-        }
+    redirect_uri = request.url_for("twitter_callback")
+    return await oauth.twitter.authorize_redirect(request, redirect_uri)
 
 #This is the code that sends the user back to the app after successful twitter login
 @app.get("/auth/twitter/callback")
 async def twitter_callback(request: Request):
     token = await oauth.twitter.authorize_access_token(request)
 
-    # token contains:
-    # oauth_token, oauth_token_secret, user_id, screen_name
-
-    user = await oauth.twitter.get(
-        "account/verify_credentials.json",
-        token=token
-    )
-
-    profile = user.json()
-
     return {
         "message": "Twitter connected successfully",
-        "user": profile,
-        "tokens": token
+        "token": token
     }
 
-"THIS IS THE CODE USED FOR SEARCHING THROUGH TWITTER HANDLES"
+#THIS IS THE CODE USED FOR SEARCHING THROUGH TWITTER HANDLES
 class ScanRequest(BaseModel):
     handle: str
 
