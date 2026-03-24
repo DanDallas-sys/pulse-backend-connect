@@ -23,18 +23,26 @@ oauth.register(
     name="twitter",
     client_id=os.getenv("TWITTER_CLIENT_ID"),
     client_secret=os.getenv("TWITTER_CLIENT_SECRET"),
-    server_metadata_url="https://api.twitter.com/2/oauth2/token",
+    authorize_url="https://twitter.com/i/oauth2/authorize",
+    access_token_url="https://api.twitter.com/2/oauth2/token",
     client_kwargs={
-        "scope": "tweet.read users.read offline.access"
+        "scope": "tweet.read users.read offline.access",
+        "code_challenge_method": "S256"
     }
 )
 
 #This is the code the login button will hit
 @app.get("/auth/twitter/login")
 async def twitter_login(request: Request):
-    redirect_uri = request.url_for("twitter_callback")
-    return await oauth.twitter.authorize_redirect(request, redirect_uri)
-
+    try:
+        redirect_uri = request.url_for("twitter_callback")
+        return await oauth.twitter.authorize_redirect(request, redirect_uri)
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "trace": traceback.format_exc()
+        }
 #This is the code that sends the user back to the app after successful twitter login
 @app.get("/auth/twitter/callback")
 async def twitter_callback(request: Request):
