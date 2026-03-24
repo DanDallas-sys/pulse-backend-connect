@@ -8,6 +8,9 @@ from fastapi.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
 import os
 from starlette.middleware.sessions import SessionMiddleware
+from fastapi.responses import RedirectResponse
+
+FRONTEND_URL = "https://pulse-reputation-ai.lovable.app/"
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -48,10 +51,19 @@ async def twitter_login(request: Request):
 async def twitter_callback(request: Request):
     token = await oauth.twitter.authorize_access_token(request)
 
-    return {
-        "message": "Twitter connected successfully",
-        "token": token
-    }
+    user = await oauth.twitter.get(
+        "https://api.twitter.com/2/users/me",
+        token=token
+    )
+
+    profile = user.json()
+
+    # OPTIONAL: you can store user + token here later
+
+    # 🔥 Redirect to frontend with data
+    return RedirectResponse(
+        url=f"{FRONTEND_URL}?username={profile['data']['username']}"
+    )
 
 #THIS IS THE CODE USED FOR SEARCHING THROUGH TWITTER HANDLES
 class ScanRequest(BaseModel):
