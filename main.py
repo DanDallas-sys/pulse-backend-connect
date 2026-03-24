@@ -3,10 +3,55 @@ from pydantic import BaseModel
 from services.twitter import fetch_tweets
 from services.analyzer import analyze_tweets_async
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Request
+from fastapi.responses import RedirectResponse
+from authlib.integrations.starlette_client import OAuth
+import os
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
+"This code is for twitter login connection"
+oauth = OAuth()
+
+oauth.register(
+    name="twitter",
+    client_id=os.getenv("TWITTER_CLIENT_ID"),
+    client_secret=os.getenv("TWITTER_CLIENT_SECRET"),
+    request_token_url="https://api.twitter.com/oauth/request_token",
+    authorize_url="https://api.twitter.com/oauth/authorize",
+    access_token_url="https://api.twitter.com/oauth/access_token",
+    api_base_url="https://api.twitter.com/1.1/",
+)
+
+"This is the code the login button will hit"
+@app.get("/auth/twitter/login")
+async def twitter_login(request: Request):
+    redirect_uri = request.url_for("twitter_callback")
+    return await oauth.twitter.authorize_redirect(request, redirect_uri)
+
+"This is the code that sends the user back to the app after successful twitter login"
+@app.get("/auth/twitter/callback")
+async def twitter_callback(request: Request):
+    token = await oauth.twitter.authorize_access_token(request)
+
+    # token contains:
+    # oauth_token, oauth_token_secret, user_id, screen_name
+
+    user = await oauth.twitter.get(
+        "account/verify_credentials.json",
+        token=token
+    )
+
+    profile = user.json()
+
+    return {
+        "message": "Twitter connected successfully",
+        "user": profile,
+        "tokens": token
+    }
+
+"THIS IS THE CODE USED FOR SEARCHING THROUGH TWITTER HANDLES"
 class ScanRequest(BaseModel):
     handle: str
 
