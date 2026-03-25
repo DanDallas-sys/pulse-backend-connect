@@ -10,7 +10,7 @@ import os
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.responses import RedirectResponse
 
-FRONTEND_URL = "https://pulse-reputation-ai.lovable.app/"
+FRONTEND_URL = "https://pulse-reputation-ai.lovable.app/onboarding"
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
