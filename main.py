@@ -33,11 +33,10 @@ async def chat_ai(data: dict):
     print("HANDLE:", handle)
     print("CONTEXT:", context)
 
+    reply = await chat_with_ai(message, context)
+    
     return {
-        "debug": {
-            "handle": handle,
-            "context_found": context is not None
-        }
+        "reply": reply
     }
 
 #This code is for twitter login connection
