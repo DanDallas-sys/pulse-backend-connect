@@ -107,6 +107,7 @@ async def scan_account(req: ScanRequest):
 
         return {
             "handle": req.handle,
+            "total": len(tweets),
             "crisis_score": crisis_score,
             "risk_level": risk_level,
             "top_risks": top_risks,
