@@ -6,15 +6,20 @@ load_dotenv()
 
 BEARER_TOKEN = os.getenv("X_BEARER_TOKEN")
 
-async def fetch_tweets(username: str):
-    url = f"https://api.twitter.com/2/tweets/search/recent?query=from:{username}&max_results=50"
+async def fetch_tweets(username: str, limit: int = 50):
+    url = f"https://api.twitter.com/2/tweets/search/recent"
+
+    params = {
+        "query": f"from:{username}",
+        "max_results": limit  # 🔥 dynamic now
+    }
 
     headers = {
         "Authorization": f"Bearer {BEARER_TOKEN}"
     }
 
     async with httpx.AsyncClient() as client:
-        response = await client.get(url, headers=headers)
+        response = await client.get(url, headers=headers, params=params)
         data = response.json()
 
     tweets = []
@@ -27,3 +32,7 @@ async def fetch_tweets(username: str):
             })
 
     return tweets
+
+async def fetch_latest_tweet(handle):
+    tweets = await fetch_tweets(handle)
+    return tweets[0] if tweets else None

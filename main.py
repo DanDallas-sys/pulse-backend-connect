@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from services.twitter import fetch_tweets
+from services.twitter import fetch_tweets, fetch_latest_tweet
 from services.analyzer import analyze_tweets_async
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Request
@@ -96,27 +96,30 @@ async def scan_account(req: ScanRequest):
     try:
         handle = req.handle.lower().strip()
 
-       # ✅ CHECK CACHE FIRST
         cached = get_cache(handle)
 
         if cached:
-           # fetch only latest tweet (cheap check)
-           tweets = await fetch_tweets(handle)
-           latest_tweet_id = tweets[0]["id"] if tweets else None
- 
-            # ✅ ONLY runs if cached exists
-           if latest_tweet_id == cached.get("latest_tweet_id"):
-              return {
-              "cached": True,
-              **cached
-             }
+            # ✅ ONLY GET LATEST TWEET
+            latest = await fetch_latest_tweet(handle)
+            latest_tweet_id = latest["id"] if latest else None
 
-           print("🔄 NEW TWEETS DETECTED → RESCANNING")
+            # ✅ SAFE CHECK
+            if latest_tweet_id == cached.get("latest_tweet_id"):
+                return {
+                    "cached": True,
+                    **cached
+                }
 
-        # 🔄 FETCH + ANALYZE
-        tweets = await fetch_tweets(handle)
+            print("🔄 NEW TWEETS DETECTED → RESCANNING")
+
+        # 🔄 FULL FETCH ONLY WHEN NEEDED
+        tweets = await fetch_tweets(handle, limit=50)
         latest_tweet_id = tweets[0]["id"] if tweets else None
-        results = await analyze_tweets_async(tweets)
+
+        if not tweets:
+          results = []
+        else:
+          results = await analyze_tweets_async(tweets)
 
         summary = {
             "high": sum(1 for r in results if r["risk"] == "High"),
@@ -170,9 +173,7 @@ async def scan_account(req: ScanRequest):
             "latest_tweet_id": latest_tweet_id 
         }
         
-        print("CHECKING CACHE FOR:", handle)
-        cached = get_cache(handle)
-        print("CACHE RESULT:", cached)
+
         # ✅ SAVE CACHE
         set_cache(handle, response)
         print("CACHE SAVED FOR:", handle)
