@@ -13,6 +13,8 @@ from services.advisor import chat_with_ai
 
 FRONTEND_URL = "https://pulse-reputation-ai.lovable.app/onboarding"
 
+last_scan_results = {}
+
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.add_middleware(
@@ -24,12 +26,14 @@ app.add_middleware(
 @app.post("/chat")
 async def chat_ai(data: dict):
     message = data.get("message")
-    context = data.get("context") 
+    handle = data.get("handle")  # 👈 NEW
 
-    response = await chat_with_ai(message, context)
+    context = last_scan_results.get(handle)
+
+    reply = await chat_with_ai(message, context)
 
     return {
-        "reply": response
+        "reply": reply
     }
 
 #This code is for twitter login connection
@@ -117,7 +121,12 @@ async def scan_account(req: ScanRequest):
         dangerous = [r for r in results if r["risk"] in ["High", "Medium"]]
         top_risks = dangerous[:3]
 
-
+        last_scan_results[req.handle] = {
+           "crisis_score": crisis_score,
+           "risk_level": risk_level,
+           "summary": summary,
+           "top_risks": top_risks
+}
         return {
             "handle": req.handle,
             "total": len(tweets),
