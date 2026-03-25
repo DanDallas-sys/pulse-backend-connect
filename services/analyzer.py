@@ -46,7 +46,8 @@ IMPORTANT:
 Tweet: "{tweet}"
 """
 
-async def classify_tweet(tweet_text):
+async def classify_tweet(tweet):
+    tweet_text = tweet["text"]
     response = await client.chat.completions.create(
         model="gpt-4.1-mini",
         messages=[
