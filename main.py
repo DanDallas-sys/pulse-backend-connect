@@ -98,14 +98,23 @@ async def scan_account(req: ScanRequest):
 
         # ✅ CHECK CACHE FIRST
         cached = get_cache(handle)
+
         if cached:
-            return {
-                "cached": True,
-                **cached
-            }
+        # fetch only latest tweet (cheap check)
+           tweets = await fetch_tweets(handle)
+           latest_tweet_id = tweets[0]["id"] if tweets else None
+
+        if latest_tweet_id == cached.get("latest_tweet_id"):
+           return {
+            "cached": True,
+            **cached
+          }
+
+        print("🔄 NEW TWEETS DETECTED → RESCANNING")
 
         # 🔄 FETCH + ANALYZE
         tweets = await fetch_tweets(handle)
+        latest_tweet_id = tweets[0]["id"] if tweets else None
         results = await analyze_tweets_async(tweets)
 
         summary = {
@@ -144,19 +153,20 @@ async def scan_account(req: ScanRequest):
             "crisis_score": crisis_score,
             "risk_level": risk_level,
             "summary": summary,
-            "top_risks": top_risks
+            "top_risks": top_risks,
+            "latest_tweet_id": latest_tweet_id
         }
 
         # ✅ BUILD RESPONSE
         response = {
             "handle": handle,
-            "cached": False,
             "total": len(tweets),
             "crisis_score": crisis_score,
             "risk_level": risk_level,
             "top_risks": top_risks,
             "summary": summary,
-            "results": results
+            "results": results,
+            "latest_tweet_id": latest_tweet_id 
         }
         
         print("CHECKING CACHE FOR:", handle)
