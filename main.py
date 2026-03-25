@@ -158,9 +158,13 @@ async def scan_account(req: ScanRequest):
             "summary": summary,
             "results": results
         }
-
+        
+        print("CHECKING CACHE FOR:", handle)
+        cached = get_cache(handle)
+        print("CACHE RESULT:", cached)
         # ✅ SAVE CACHE
         set_cache(handle, response)
+        print("CACHE SAVED FOR:", handle)
 
         return response
 

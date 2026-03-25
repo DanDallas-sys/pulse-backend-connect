@@ -1,20 +1,22 @@
 import time
 
-cache = {}
-CACHE_TTL = 300
+cache_store = {}
+CACHE_TTL = 300  # 5 minutes
 
 def get_cache(key):
-    cached = cache.get(key)
+    data = cache_store.get(key)
 
-    if cached:
-        if time.time() - cached["timestamp"] < CACHE_TTL:
-            return cached["data"]
+    if not data:
+        return None
 
-    return None
+    if time.time() - data["time"] > CACHE_TTL:
+        del cache_store[key]
+        return None
 
+    return data["value"]
 
-def set_cache(key, data):
-    cache[key] = {
-        "data": data,
-        "timestamp": time.time()
+def set_cache(key, value):
+    cache_store[key] = {
+        "value": value,
+        "time": time.time()
     }
