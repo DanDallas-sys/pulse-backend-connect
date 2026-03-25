@@ -10,6 +10,7 @@ import os
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.responses import RedirectResponse
 from services.advisor import chat_with_ai
+from services.cache import get_cache, set_cache
 
 FRONTEND_URL = "https://pulse-reputation-ai.lovable.app/onboarding"
 
@@ -93,7 +94,18 @@ class ScanRequest(BaseModel):
 @app.post("/scan")
 async def scan_account(req: ScanRequest):
     try:
-        tweets = await fetch_tweets(req.handle)
+        handle = req.handle.lower().strip()
+
+        # ✅ CHECK CACHE FIRST
+        cached = get_cache(handle)
+        if cached:
+            return {
+                "cached": True,
+                **cached
+            }
+
+        # 🔄 FETCH + ANALYZE
+        tweets = await fetch_tweets(handle)
         results = await analyze_tweets_async(tweets)
 
         summary = {
@@ -112,33 +124,33 @@ async def scan_account(req: ScanRequest):
         max_possible = len(results) * 4
 
         crisis_score = int((score / max_possible) * 100) if max_possible > 0 else 0
-        
+
         if crisis_score > 70:
-          risk_level = "High"
+            risk_level = "High"
         elif crisis_score > 40:
-          risk_level = "Medium"
+            risk_level = "Medium"
         elif crisis_score > 10:
-          risk_level = "Low"
+            risk_level = "Low"
         else:
-           risk_level = "Safe" 
+            risk_level = "Safe"
 
         dangerous = [r for r in results if r["risk"] in ["High", "Medium"]]
         top_risks = dangerous[:3]
-        
 
         global last_used_handle
-        last_used_handle = req.handle
+        last_used_handle = handle
 
+        last_scan_results[handle] = {
+            "crisis_score": crisis_score,
+            "risk_level": risk_level,
+            "summary": summary,
+            "top_risks": top_risks
+        }
 
-
-        last_scan_results[req.handle] = {
-           "crisis_score": crisis_score,
-           "risk_level": risk_level,
-           "summary": summary,
-           "top_risks": top_risks
-}
-        return {
-            "handle": req.handle,
+        # ✅ BUILD RESPONSE
+        response = {
+            "handle": handle,
+            "cached": False,
             "total": len(tweets),
             "crisis_score": crisis_score,
             "risk_level": risk_level,
@@ -146,16 +158,17 @@ async def scan_account(req: ScanRequest):
             "summary": summary,
             "results": results
         }
-       
 
+        # ✅ SAVE CACHE
+        set_cache(handle, response)
 
-        
+        return response
+
     except Exception as e:
         import traceback
         return {
             "error": str(e),
             "trace": traceback.format_exc()
         }
-    
 
     

@@ -15,6 +15,16 @@ You help users:
 
 Be sharp, practical, and insightful.
 Avoid generic advice.
+
+IMPORTANT:
+- You do NOT have the full tweet history
+- You only know the analyzed and flagged content
+
+If asked about something specific like "last post":
+→ Explain you don’t have exact tweet history
+→ Redirect to what you DO know (risk analysis)
+
+Always be helpful and redirect intelligently.
 """
 
     # Inject scan context if available
