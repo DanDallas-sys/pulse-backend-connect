@@ -9,6 +9,7 @@ from authlib.integrations.starlette_client import OAuth
 import os
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.responses import RedirectResponse
+from services.advisor import chat_with_ai
 
 FRONTEND_URL = "https://pulse-reputation-ai.lovable.app/onboarding"
 
@@ -18,6 +19,18 @@ app.add_middleware(
     SessionMiddleware,
     secret_key="super-secret-key-change-this"
 )
+
+#This code is for the AI Advisor chatbot
+@app.post("/chat")
+async def chat_ai(data: dict):
+    message = data.get("message")
+    context = data.get("context") 
+
+    response = await chat_with_ai(message, context)
+
+    return {
+        "reply": response
+    }
 
 #This code is for twitter login connection
 oauth = OAuth()
@@ -124,3 +137,6 @@ async def scan_account(req: ScanRequest):
             "error": str(e),
             "trace": traceback.format_exc()
         }
+    
+
+    
