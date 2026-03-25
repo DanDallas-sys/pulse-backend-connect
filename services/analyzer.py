@@ -63,13 +63,15 @@ async def classify_tweet(tweet_text):
         return {
             "tweet": tweet_text,
             "risk": parsed.get("risk", "Unknown"),
-            "reason": parsed.get("reason", "")
+            "reason": parsed.get("reason", ""),
+            "url": tweet_text.get("url")  # 🔥 ADD THIS
         }
     except Exception:
         return {
             "tweet": tweet_text,
             "risk": "Unknown",
-            "reason": content
+            "reason": content,
+            "url": tweet_text.get("url")  # 🔥 ADD THIS
         }
 
 

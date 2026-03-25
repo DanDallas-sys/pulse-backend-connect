@@ -28,11 +28,12 @@ async def fetch_tweets(username: str, limit: int = 50):
         for tweet in data["data"]:
             tweets.append({
                 "id": tweet["id"],
-                "text": tweet["text"]
+                "text": tweet["text"],
+                "url": f"https://twitter.com/{username}/status/{tweet['id']}"
             })
 
     return tweets
 
-async def fetch_latest_tweet(handle):
+async def fetch_latest_tweet(handle, limit=1):
     tweets = await fetch_tweets(handle)
     return tweets[0] if tweets else None
