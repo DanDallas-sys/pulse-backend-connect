@@ -96,21 +96,22 @@ async def scan_account(req: ScanRequest):
     try:
         handle = req.handle.lower().strip()
 
-        # ✅ CHECK CACHE FIRST
+       # ✅ CHECK CACHE FIRST
         cached = get_cache(handle)
 
         if cached:
-        # fetch only latest tweet (cheap check)
+           # fetch only latest tweet (cheap check)
            tweets = await fetch_tweets(handle)
            latest_tweet_id = tweets[0]["id"] if tweets else None
+ 
+            # ✅ ONLY runs if cached exists
+           if latest_tweet_id == cached.get("latest_tweet_id"):
+              return {
+              "cached": True,
+              **cached
+             }
 
-        if latest_tweet_id == cached.get("latest_tweet_id"):
-           return {
-            "cached": True,
-            **cached
-          }
-
-        print("🔄 NEW TWEETS DETECTED → RESCANNING")
+           print("🔄 NEW TWEETS DETECTED → RESCANNING")
 
         # 🔄 FETCH + ANALYZE
         tweets = await fetch_tweets(handle)
