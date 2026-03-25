@@ -26,14 +26,18 @@ app.add_middleware(
 @app.post("/chat")
 async def chat_ai(data: dict):
     message = data.get("message")
-    handle = data.get("handle")  # 👈 NEW
+    handle = data.get("handle")
 
     context = last_scan_results.get(handle)
 
-    reply = await chat_with_ai(message, context)
+    print("HANDLE:", handle)
+    print("CONTEXT:", context)
 
     return {
-        "reply": reply
+        "debug": {
+            "handle": handle,
+            "context_found": context is not None
+        }
     }
 
 #This code is for twitter login connection

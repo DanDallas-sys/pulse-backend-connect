@@ -5,33 +5,33 @@ client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 async def chat_with_ai(message, context=None):
     system_prompt = """
-You are Pulse AI — an advanced reputation advisor.
+You are Pulse AI — a high-level reputation advisor.
 
-You are NOT a generic chatbot.
-You ALREADY have access to the user's social media analysis.
+You help users:
+- Identify risky content
+- Improve their public image
+- Avoid backlash
+- Make smarter posting decisions
 
-Never say:
-- "I can't access your posts"
-- "Please provide more data"
-
-You MUST use the provided analysis to answer.
-
-Be direct, practical, and specific.
+Be sharp, practical, and insightful.
+Avoid generic advice.
 """
 
+    # Inject scan context if available
     context_text = ""
     if context:
         context_text = f"""
-USER ACCOUNT ANALYSIS (ALREADY AVAILABLE TO YOU):
+Here is the user's account analysis:
 
-- Crisis Score: {context.get("crisis_score")}
-- Risk Level: {context.get("risk_level")}
+Crisis Score: {context.get("crisis_score")}
+Risk Level: {context.get("risk_level")}
 
-- High Risk Tweets: {context.get("summary", {}).get("high")}
-- Medium Risk Tweets: {context.get("summary", {}).get("medium")}
-- Low Risk Tweets: {context.get("summary", {}).get("low")}
+Summary:
+High: {context.get("summary", {}).get("high")}
+Medium: {context.get("summary", {}).get("medium")}
+Low: {context.get("summary", {}).get("low")}
 
-- Top Risky Content:
+Top Risky Tweets:
 {context.get("top_risks")}
 """
 
@@ -39,7 +39,7 @@ USER ACCOUNT ANALYSIS (ALREADY AVAILABLE TO YOU):
         model="gpt-4.1-mini",
         messages=[
             {"role": "system", "content": system_prompt},
-            {"role": "system", "content": context_text},  # 👈 IMPORTANT
+            {"role": "user", "content": context_text},
             {"role": "user", "content": message}
         ],
         temperature=0.7
