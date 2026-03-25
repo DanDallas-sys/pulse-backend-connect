@@ -11,6 +11,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi.responses import RedirectResponse
 from services.advisor import chat_with_ai
 from services.cache import get_cache, set_cache
+from services.timeline import fetch_user_timeline_range
+from datetime import datetime
 
 FRONTEND_URL = "https://pulse-reputation-ai.lovable.app/onboarding"
 
@@ -187,4 +189,42 @@ async def scan_account(req: ScanRequest):
             "trace": traceback.format_exc()
         }
 
+@app.get("/timeline")
+async def timeline(
+    username: str,
+    start_date: str,
+    end_date: str,
+    limit: int = 50
+):
+    try:
+        # 🔥 RENDER GUARD STARTS HERE
+        start = datetime.fromisoformat(start_date)
+        end = datetime.fromisoformat(end_date)
+
+        if end < start:
+            return {"error": "End date cannot be before start date"}
+
+        if (end - start).days > 14:
+            return {"error": "Date range too large (max 14 days)"}
+        # 🔥 RENDER GUARD ENDS HERE
+
+        tweets = await fetch_user_timeline_range(
+            username=username,
+            start_date=start_date,
+            end_date=end_date,
+            limit=limit
+        )
+
+        return {
+            "username": username,
+            "count": len(tweets),
+            "tweets": tweets
+        }
+
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "trace": traceback.format_exc()
+        }
     
