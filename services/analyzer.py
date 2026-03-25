@@ -64,19 +64,19 @@ async def classify_tweet(tweet_text):
             "tweet": tweet_text,
             "risk": parsed.get("risk", "Unknown"),
             "reason": parsed.get("reason", ""),
-            "url": tweet_text.get("url")  # 🔥 ADD THIS
+            "url": tweet.get("url")  # 🔥 ADD THIS
         }
     except Exception:
         return {
             "tweet": tweet_text,
             "risk": "Unknown",
             "reason": content,
-            "url": tweet_text.get("url")  # 🔥 ADD THIS
+            "url": tweet.get("url")  # 🔥 ADD THIS
         }
 
 
 async def analyze_tweets_async(tweets):
-    tasks = [classify_tweet(t["text"]) for t in tweets]
+    tasks = [classify_tweet(t) for t in tweets]
 
     results = await asyncio.gather(*tasks)
 
