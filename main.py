@@ -14,6 +14,7 @@ from services.advisor import chat_with_ai
 FRONTEND_URL = "https://pulse-reputation-ai.lovable.app/onboarding"
 
 last_scan_results = {}
+last_used_handle = None
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -26,7 +27,7 @@ app.add_middleware(
 @app.post("/chat")
 async def chat_ai(data: dict):
     message = data.get("message")
-    handle = data.get("handle")
+    handle = data.get("handle") or last_used_handle 
 
     context = last_scan_results.get(handle)
 
@@ -34,7 +35,7 @@ async def chat_ai(data: dict):
     print("CONTEXT:", context)
 
     reply = await chat_with_ai(message, context)
-    
+
     return {
         "reply": reply
     }
@@ -123,6 +124,12 @@ async def scan_account(req: ScanRequest):
 
         dangerous = [r for r in results if r["risk"] in ["High", "Medium"]]
         top_risks = dangerous[:3]
+        
+
+        global last_used_handle
+        last_used_handle = req.handle
+
+
 
         last_scan_results[req.handle] = {
            "crisis_score": crisis_score,
