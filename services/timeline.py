@@ -1,8 +1,9 @@
-# services/timeline.py
-
 import os
 import httpx
+import logging
 from datetime import datetime, timezone
+
+logger = logging.getLogger(__name__)
 
 APIFY_TOKEN = os.getenv("APIFY_API_TOKEN")
 ACTOR_ID = "powerai~twitter-timeline-scraper"
@@ -15,7 +16,7 @@ async def fetch_user_timeline_range(username: str, start_date: str, end_date: st
     payload = {
         "username": username,
         "maxTweets": limit,
-        "startDate": start_date,   # format: YYYY-MM-DD
+        "startDate": start_date,
         "endDate": end_date
     }
 
@@ -25,17 +26,17 @@ async def fetch_user_timeline_range(username: str, start_date: str, end_date: st
             response.raise_for_status()
             data = response.json()
             if data:
-             print("APIFY ITEM KEYS:", list(data[0].keys()))
+                logger.warning("APIFY ITEM KEYS: %s", list(data[0].keys()))
 
         tweets = []
         for item in data:
-          tweets.append({
-           "id": str(item.get("id") or item.get("tweetId") or item.get("tweet_id", "")),
-           "username": item.get("author", {}).get("userName") or item.get("username", username),
-           "content": item.get("text") or item.get("fullText", ""),
-           "created_at": item.get("createdAt") or item.get("created_at", ""),
-           "url": item.get("url") or f"https://twitter.com/{username}/status/{item.get('id') or item.get('tweetId', '')}"
-        })
+            tweets.append({
+                "id": str(item.get("id") or item.get("tweetId") or item.get("tweet_id", "")),
+                "username": item.get("author", {}).get("userName") or item.get("username", username),
+                "content": item.get("text") or item.get("fullText", ""),
+                "created_at": item.get("createdAt") or item.get("created_at", ""),
+                "url": item.get("url") or f"https://twitter.com/{username}/status/{item.get('id') or item.get('tweetId', '')}"
+            })
 
         return tweets
 
