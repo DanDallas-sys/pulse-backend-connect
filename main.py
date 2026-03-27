@@ -196,7 +196,9 @@ async def timeline(
     end_date: str,
     limit: int = 50
 ):
-    print(f"TIMELINE REQUEST → username: {username}, start: {start_date}, end: {end_date}")
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.warning(f"TIMELINE REQUEST → username: {username}, start: {start_date}, end: {end_date}")
     try:
         # 🔥 RENDER GUARD STARTS HERE
         start = datetime.fromisoformat(start_date)
