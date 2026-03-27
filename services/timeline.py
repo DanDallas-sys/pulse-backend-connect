@@ -30,13 +30,16 @@ async def fetch_user_timeline_range(username: str, start_date: str, end_date: st
 
         tweets = []
         for item in data:
-            tweets.append({
-                "id": str(item.get("id") or item.get("tweetId") or item.get("tweet_id", "")),
-                "username": item.get("author", {}).get("userName") or item.get("username", username),
-                "content": item.get("text") or item.get("fullText", ""),
-                "created_at": item.get("createdAt") or item.get("created_at", ""),
-                "url": item.get("url") or f"https://twitter.com/{username}/status/{item.get('id') or item.get('tweetId', '')}"
-            })
+          author = item.get("author", {})
+          tweet_id = str(item.get("tweet_id", ""))
+          username_out = author.get("username") or author.get("userName") or username
+          tweets.append({
+           "id": tweet_id,
+           "username": username_out,
+           "content": item.get("text", ""),
+           "created_at": item.get("created_at", ""),
+           "url": f"https://twitter.com/{username_out}/status/{tweet_id}"
+         })
 
         return tweets
 
