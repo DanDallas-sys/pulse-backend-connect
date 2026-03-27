@@ -14,7 +14,7 @@ async def fetch_user_timeline_range(username: str, start_date: str, end_date: st
     url = f"https://api.apify.com/v2/acts/{ACTOR_ID}/run-sync-get-dataset-items?token={APIFY_TOKEN}"
 
     payload = {
-        "username": username,
+        "screenname": username,
         "maxTweets": limit,
         "startDate": start_date,
         "endDate": end_date
