@@ -1,7 +1,7 @@
 import os
 import httpx
+import asyncio
 import logging
-from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +11,7 @@ ACTOR_ID = "powerai~twitter-timeline-scraper"
 async def fetch_user_timeline_range(username: str, start_date: str, end_date: str, limit: int = 50):
     username = username.replace("@", "").strip()
 
-    url = f"https://api.apify.com/v2/acts/{ACTOR_ID}/run-sync-get-dataset-items?token={APIFY_TOKEN}"
+    trigger_url = f"https://api.apify.com/v2/acts/{ACTOR_ID}/runs?token={APIFY_TOKEN}"
 
     payload = {
         "screenname": username,
@@ -20,24 +20,37 @@ async def fetch_user_timeline_range(username: str, start_date: str, end_date: st
         "endDate": end_date
     }
 
-    logger.warning(f"Apify payload: {payload}")
-
     try:
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            response = await client.post(url, json=payload)
-            
-            # Accept partial results even if actor crashed mid-run
-            if response.status_code not in [200, 201]:
-                logger.warning(f"Apify returned status {response.status_code}")
-                return {"error": f"Apify returned status {response.status_code}"}
+        async with httpx.AsyncClient(timeout=30.0) as client:
 
-            data = response.json()
+            # Step 1 — trigger the run async
+            run_response = await client.post(trigger_url, json=payload)
+            run_response.raise_for_status()
+            run_data = run_response.json()
+            run_id = run_data["data"]["id"]
+            dataset_id = run_data["data"]["defaultDatasetId"]
+            logger.warning(f"Apify run started: {run_id}")
+
+            # Step 2 — poll until finished or timeout (max 90 seconds)
+            status_url = f"https://api.apify.com/v2/actor-runs/{run_id}?token={APIFY_TOKEN}"
+            elapsed = 0
+            while elapsed < 90:
+                await asyncio.sleep(5)
+                elapsed += 5
+                status_resp = await client.get(status_url)
+                status = status_resp.json()["data"]["status"]
+                logger.warning(f"Apify run status: {status} ({elapsed}s)")
+
+                if status in ["SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"]:
+                    break
+
+            # Step 3 — fetch whatever results were saved regardless of status
+            results_url = f"https://api.apify.com/v2/datasets/{dataset_id}/items?token={APIFY_TOKEN}"
+            results_resp = await client.get(results_url)
+            data = results_resp.json()
 
         if not isinstance(data, list):
             return {"error": "Unexpected response from Apify"}
-
-        if len(data) == 0:
-            return []
 
         tweets = []
         for item in data:
