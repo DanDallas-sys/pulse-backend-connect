@@ -196,6 +196,7 @@ async def timeline(
     end_date: str,
     limit: int = 50
 ):
+    print(f"TIMELINE REQUEST → username: {username}, start: {start_date}, end: {end_date}")
     try:
         # 🔥 RENDER GUARD STARTS HERE
         start = datetime.fromisoformat(start_date)
@@ -204,9 +205,6 @@ async def timeline(
         if end < start:
             return {"error": "End date cannot be before start date"}
 
-        if (end - start).days > 14:
-            return {"error": "Date range too large (max 14 days)"}
-        # 🔥 RENDER GUARD ENDS HERE
 
         tweets = await fetch_user_timeline_range(
             username=username,
@@ -242,8 +240,7 @@ async def timeline_analyze(
         if end < start:
             return {"error": "End date cannot be before start date"}
 
-        if (end - start).days > 14:
-            return {"error": "Date range too large (max 14 days)"}
+
 
         # Fetch tweets from Apify
         tweets = await fetch_user_timeline_range(
