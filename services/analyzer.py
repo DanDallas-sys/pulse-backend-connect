@@ -47,7 +47,7 @@ Tweet: "{tweet}"
 """
 
 async def classify_tweet(tweet):
-    tweet_text = tweet["text"]
+    tweet_text = tweet.get("text") or tweet.get("content", "")
     response = await client.chat.completions.create(
         model="gpt-4.1-mini",
         messages=[

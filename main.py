@@ -227,4 +227,83 @@ async def timeline(
             "error": str(e),
             "trace": traceback.format_exc()
         }
-    
+
+@app.get("/timeline/analyze")
+async def timeline_analyze(
+    username: str,
+    start_date: str,
+    end_date: str,
+    limit: int = 50
+):
+    try:
+        start = datetime.fromisoformat(start_date)
+        end = datetime.fromisoformat(end_date)
+
+        if end < start:
+            return {"error": "End date cannot be before start date"}
+
+        if (end - start).days > 14:
+            return {"error": "Date range too large (max 14 days)"}
+
+        # Fetch tweets from Apify
+        tweets = await fetch_user_timeline_range(
+            username=username,
+            start_date=start_date,
+            end_date=end_date,
+            limit=limit
+        )
+
+        if isinstance(tweets, dict) and "error" in tweets:
+            return tweets
+
+        if not tweets:
+            return {"username": username, "count": 0, "results": [], "summary": {}, "crisis_score": 0, "risk_level": "Safe"}
+
+        # Run through the same analyzer as /scan
+        results = await analyze_tweets_async(tweets)
+
+        summary = {
+            "high": sum(1 for r in results if r["risk"] == "High"),
+            "medium": sum(1 for r in results if r["risk"] == "Medium"),
+            "low": sum(1 for r in results if r["risk"] == "Low"),
+            "safe": sum(1 for r in results if r["risk"] == "Safe"),
+        }
+
+        score = (
+            summary["high"] * 4 +
+            summary["medium"] * 3 +
+            summary["low"] * 2
+        )
+
+        max_possible = len(results) * 4
+        crisis_score = int((score / max_possible) * 100) if max_possible > 0 else 0
+
+        if crisis_score > 70:
+            risk_level = "High"
+        elif crisis_score > 40:
+            risk_level = "Medium"
+        elif crisis_score > 10:
+            risk_level = "Low"
+        else:
+            risk_level = "Safe"
+
+        dangerous = [r for r in results if r["risk"] in ["High", "Medium"]]
+        top_risks = dangerous[:3]
+
+        return {
+            "username": username,
+            "period": {"start": start_date, "end": end_date},
+            "count": len(tweets),
+            "crisis_score": crisis_score,
+            "risk_level": risk_level,
+            "summary": summary,
+            "top_risks": top_risks,
+            "results": results
+        }
+
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "trace": traceback.format_exc()
+        }
