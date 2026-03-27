@@ -15,6 +15,7 @@ async def fetch_user_timeline_range(username: str, start_date: str, end_date: st
 
     payload = {
         "screenname": username,
+        "username": username,
         "maxTweets": limit,
         "startDate": start_date,
         "endDate": end_date
