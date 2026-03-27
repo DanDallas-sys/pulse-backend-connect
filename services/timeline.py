@@ -25,10 +25,10 @@ async def fetch_user_timeline_range(username: str, start_date: str, end_date: st
             response = await client.post(url, json=payload)
             response.raise_for_status()
             data = response.json()
-            if data:
-                logger.warning("APIFY ITEM KEYS: %s", list(data[0].keys()))
+ 
 
         tweets = []
+
         for item in data:
           author = item.get("author", {})
           tweet_id = str(item.get("tweet_id", ""))
@@ -40,6 +40,7 @@ async def fetch_user_timeline_range(username: str, start_date: str, end_date: st
            "created_at": item.get("created_at", ""),
            "url": f"https://twitter.com/{username_out}/status/{tweet_id}"
          })
+
 
         return tweets
 
